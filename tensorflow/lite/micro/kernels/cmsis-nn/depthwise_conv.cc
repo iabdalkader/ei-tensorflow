@@ -57,8 +57,8 @@ struct OpData {
   int32_t output_activation_min;
   int32_t output_activation_max;
 
-  // Scratch buffer index for the arm_convolve_wrapper_s8 buffer
-  int buffer_idx;
+  // Scratch buffer for the arm_convolve_wrapper_s8 buffer
+  void* scratch_buffer;
 };
 
 TfLiteStatus CalculateOpData(TfLiteContext* context, TfLiteNode* node,
@@ -134,15 +134,15 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   data->per_channel_output_shift =
       reinterpret_cast<int32_t*>(per_channel_output_shift);
 
-  data->buffer_idx = -1;
+  data->scratch_buffer = nullptr;
 
   if (params->depth_multiplier == 1) {
     const int32_t buf_size = arm_depthwise_conv_s8_opt_get_buffer_size(
         input_depth, filter_width, filter_height);
 
     if (buf_size > 0) {
-      TF_LITE_ENSURE_STATUS(
-          context->RequestScratchBufferInArena(context, buf_size, &data->buffer_idx));
+      context->AllocatePersistentBuffer(
+          context, buf_size, &data->scratch_buffer);
     }
   }
 #endif
@@ -214,11 +214,7 @@ TfLiteStatus EvalQuantizedPerChannel(TfLiteContext* context, TfLiteNode* node,
   RuntimeShape bias_shape = GetTensorShape(bias);
 
   if (op_params.depth_multiplier == 1) {
-    int16_t* buf = nullptr;
-    if (data->buffer_idx > -1) {
-      void* raw = context->GetScratchBuffer(context, data->buffer_idx);
-      buf = reinterpret_cast<int16_t*>(raw);
-    }
+    int16_t* buf = reinterpret_cast<int16_t*>(data->scratch_buffer);
 
     TF_LITE_ENSURE_EQ(
         context,

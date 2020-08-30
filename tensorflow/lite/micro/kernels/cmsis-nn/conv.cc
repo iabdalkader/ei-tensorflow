@@ -56,8 +56,8 @@ struct OpData {
   int32_t output_activation_min;
   int32_t output_activation_max;
 
-  // Scratch buffer index for the arm_convolve_wrapper_s8 buffer
-  int buffer_idx;
+  // Scratch buffer for the arm_convolve_wrapper_s8 buffer
+  void* scratch_buffer;
 };
 
 inline PaddingType RuntimePaddingType(TfLitePadding padding) {
@@ -188,10 +188,10 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   }
 
   if (buf_size > 0) {
-    TF_LITE_ENSURE_STATUS(
-        context->RequestScratchBufferInArena(context, buf_size, &data->buffer_idx));
+    context->AllocatePersistentBuffer(
+      context, buf_size, &data->scratch_buffer);
   } else {
-    data->buffer_idx = -1;
+    data->scratch_buffer = nullptr;
   }
 #endif
   return kTfLiteOk;
@@ -305,8 +305,8 @@ TfLiteStatus EvalQuantizedPerChannel(
   ctx.buf = nullptr;
   ctx.size = 0;
 
-  if (data->buffer_idx > -1) {
-    ctx.buf = context->GetScratchBuffer(context, data->buffer_idx);
+  if (data->scratch_buffer) {
+    ctx.buf = data->scratch_buffer;
     // Note: ctx.size is currently not used in cmsis-nn.
     // The buffer should be allocated in the Prepare function through
     // arm_convolve_wrapper_s8_get_buffer_size

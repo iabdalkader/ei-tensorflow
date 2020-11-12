@@ -500,8 +500,8 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 
 }  // namespace conv
 
-TfLiteRegistration Register_CONV_2D() {
-  return {/*init=*/conv::Init,
+TfLiteRegistration* Register_CONV_2D() {
+  static TfLiteRegistration r = {/*init=*/conv::Init,
           /*free=*/nullptr,
           /*prepare=*/conv::Prepare,
           /*invoke=*/conv::Eval,
@@ -509,6 +509,7 @@ TfLiteRegistration Register_CONV_2D() {
           /*builtin_code=*/0,
           /*custom_name=*/nullptr,
           /*version=*/0};
+  return &r;
 }
 
 }  // namespace micro

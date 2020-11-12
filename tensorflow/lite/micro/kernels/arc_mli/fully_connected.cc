@@ -361,8 +361,8 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 
 }  // namespace fully_connected
 
-TfLiteRegistration Register_FULLY_CONNECTED() {
-  return {/*init=*/fully_connected::Init,
+TfLiteRegistration* Register_FULLY_CONNECTED() {
+  static TfLiteRegistration r = {/*init=*/fully_connected::Init,
           /*free=*/nullptr,
           /*prepare=*/fully_connected::Prepare,
           /*invoke=*/fully_connected::Eval,
@@ -370,6 +370,7 @@ TfLiteRegistration Register_FULLY_CONNECTED() {
           /*builtin_code=*/0,
           /*custom_name=*/nullptr,
           /*version=*/0};
+  return &r;
 }
 
 }  // namespace micro

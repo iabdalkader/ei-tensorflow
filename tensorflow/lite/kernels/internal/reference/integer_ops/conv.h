@@ -97,18 +97,19 @@ inline void ConvPerChannel(
                 const int in_y =
                     in_y_origin + dilation_height_factor * filter_y;
 
-                int8 *pFilter, *pInput;
-                pFilter = (int8 *)&filter_data[Offset(filter_shape, out_channel, filter_y,
-                                  filter_x, 0)];
-                pInput = (int8 *)&input_data[Offset(input_shape, batch, in_y,
-                                  in_x, 0)];
+                const bool is_point_inside_image =
+                    (in_x >= 0) && (in_x < input_width) && (in_y >= 0) &&
+                    (in_y < input_height);
 
-                for (int in_channel = 0; in_channel < input_depth; ++in_channel) {
-                  // Zero padding by omitting the areas outside the image.
-                  const bool is_point_inside_image =
-                      (in_x >= 0) && (in_x < input_width) && (in_y >= 0) &&
-                      (in_y < input_height);
-                  if (is_point_inside_image) {
+                if (is_point_inside_image) {
+                  int8 *pFilter, *pInput;
+                  pFilter = (int8 *)&filter_data[Offset(filter_shape, out_channel, filter_y,
+                                    filter_x, 0)];
+                  pInput = (int8 *)&input_data[Offset(input_shape, batch, in_y,
+                                    in_x, 0)];
+
+                  for (int in_channel = 0; in_channel < input_depth; ++in_channel) {
+                    // Zero padding by omitting the areas outside the image.
                     int32 input_val = *pInput++;
                     int32 filter_val = *pFilter++;
                     // Accumulate with 32 bits accumulator.

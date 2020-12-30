@@ -21,8 +21,8 @@ include(FetchContent)
 
 OverridableFetchContent_Declare(
   xnnpack
-  GIT_REPOSITORY https://github.com/google/xnnpack
-  GIT_TAG bbe85068bb7aa6249a4e915462014016373c945f
+  GIT_REPOSITORY https://github.com/janjongboom/xnnpack
+  GIT_TAG 8159cdd9873818c8a18c3bfb39ce6a089fbbd37c
   GIT_PROGRESS TRUE
   PREFIX "${CMAKE_BINARY_DIR}"
   SOURCE_DIR "${CMAKE_BINARY_DIR}/xnnpack"

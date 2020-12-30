@@ -19,6 +19,8 @@
 cmake_minimum_required(VERSION 3.16)
 project(minimal C CXX)
 
+set (CMAKE_CXX_STANDARD 11)
+
 set(TENSORFLOW_SOURCE_DIR "" CACHE PATH
   "Directory that contains the TensorFlow project"
 )

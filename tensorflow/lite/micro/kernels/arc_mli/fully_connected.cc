@@ -1,4 +1,4 @@
-/* Copyright 2020 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2017-2020 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -27,9 +27,11 @@ limitations under the License.
 #include "tensorflow/lite/micro/kernels/arc_mli/mli_tf_utils.h"
 #include "tensorflow/lite/micro/kernels/arc_mli/scratch_buf_mgr.h"
 #include "tensorflow/lite/micro/kernels/arc_mli/scratch_buffers.h"
-#include "tensorflow/lite/micro/kernels/kernel_util.h"
 
 namespace tflite {
+namespace ops {
+namespace micro {
+namespace fully_connected {
 namespace {
 
 struct OpData {
@@ -43,19 +45,6 @@ struct OpData {
   int32_t output_activation_max;
   // The index of the temporary tensor where the quantized inputs are cached.
   int input_quantized_index;
-  // Cached tensor zero point values for quantized operations.
-  int32_t input_zero_point;
-  int32_t filter_zero_point;
-  int32_t output_zero_point;
-
-  // The result of checking if MLI optimized version of tensors can be used.
-  bool is_mli_applicable;
-
-  // Tensors in MLI format.
-  mli_tensor* mli_in;
-  mli_tensor* mli_weights;
-  mli_tensor* mli_bias;
-  mli_tensor* mli_out;
 };
 
 constexpr int kInputTensor = 0;
@@ -66,7 +55,7 @@ constexpr int kOutputTensor = 0;
 bool IsMliApplicable(TfLiteContext* context, const TfLiteTensor* input,
                      const TfLiteTensor* filter, const TfLiteTensor* bias,
                      const TfLiteFullyConnectedParams* params) {
-  // MLI optimized version only supports int8_t datatype and no fused Relu and
+  // MLI optimized version only supports int8_t dataype and no fused Relu and
   // symmetric per-tensor quantization of weights (not per-axis)
   bool ret_val = (filter->type == kTfLiteInt8) &&
                  (input->type == kTfLiteInt8) && (bias->type == kTfLiteInt32) &&
@@ -83,7 +72,8 @@ TfLiteStatus CalculateOpData(TfLiteContext* context,
                              OpData* data) {
   TfLiteStatus status = kTfLiteOk;
 #if !defined(TF_LITE_STRIP_REFERENCE_IMPL)
-  if (data_type != kTfLiteFloat32 && !data->is_mli_applicable) {
+  if (data_type != kTfLiteFloat32 &&
+      !IsMliApplicable(context, input, filter, bias, params)) {
     double real_multiplier = 0.0;
     TF_LITE_ENSURE_STATUS(GetQuantizedConvolutionMultipler(
         context, input, filter, bias, output, &real_multiplier));
@@ -122,73 +112,53 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   TF_LITE_ENSURE_MSG(context, input->type == filter->type,
                      "Hybrid models are not supported on TFLite Micro.");
 
-  data->input_zero_point = input->params.zero_point;
-  data->filter_zero_point = filter->params.zero_point;
-  data->output_zero_point = output->params.zero_point;
-
-  data->is_mli_applicable =
-      IsMliApplicable(context, input, filter, bias, params);
-
-  if (input->type == kTfLiteInt8 && data->is_mli_applicable) {
-    data->mli_in = static_cast<mli_tensor*>(
-        context->AllocatePersistentBuffer(context, sizeof(mli_tensor)));
-    data->mli_weights = static_cast<mli_tensor*>(
-        context->AllocatePersistentBuffer(context, sizeof(mli_tensor)));
-    data->mli_bias = static_cast<mli_tensor*>(
-        context->AllocatePersistentBuffer(context, sizeof(mli_tensor)));
-    data->mli_out = static_cast<mli_tensor*>(
-        context->AllocatePersistentBuffer(context, sizeof(mli_tensor)));
-
-    ops::micro::ConvertToMliTensor(input, data->mli_in);
-    ops::micro::ConvertToMliTensor(filter, data->mli_weights);
-    ops::micro::ConvertToMliTensor(bias, data->mli_bias);
-    ops::micro::ConvertToMliTensor(output, data->mli_out);
-
-    /* The input tensor can have more than 2 dimensions. for the compute this
-   doesn't make any difference because all the inputs or a batch entry will
-   be used anyway. because the MLI kernel doesn't recognize the multiple
-   dimensions, the tensor shape is casted to a {batchnum, inputsize} shape. */
-    data->mli_in->shape[0] = data->mli_out->shape[0];
-    data->mli_in->shape[1] = data->mli_weights->shape[1];
-    data->mli_in->shape[2] = 0;
-    data->mli_in->shape[3] = 0;
-    data->mli_in->rank = 2;
-  }
-
-  return (CalculateOpData(context, params, input->type, input, filter, bias,
-                          output, data));
+  return CalculateOpData(context, params, input->type, input, filter, bias,
+                         output, data);
 }
 
 TfLiteStatus EvalMliQuantizedInt8(TfLiteContext* context, TfLiteNode* node,
                                   const TfLiteFullyConnectedParams* params,
-                                  const OpData& data,
-                                  const TfLiteEvalTensor* input,
-                                  const TfLiteEvalTensor* filter,
-                                  const TfLiteEvalTensor* bias,
-                                  TfLiteEvalTensor* output) {
-  ops::micro::MliTensorAttachBuffer<int8_t>(input, data.mli_in);
-  ops::micro::MliTensorAttachBuffer<int8_t>(filter, data.mli_weights);
-  ops::micro::MliTensorAttachBuffer<int32_t>(bias, data.mli_bias);
-  ops::micro::MliTensorAttachBuffer<int8_t>(output, data.mli_out);
+                                  const OpData& data, const TfLiteTensor* input,
+                                  const TfLiteTensor* filter,
+                                  const TfLiteTensor* bias,
+                                  TfLiteTensor* output) {
+  mli_tensor mli_in = {};
+  mli_tensor mli_weights = {};
+  mli_tensor mli_bias = {};
+  mli_tensor mli_out = {};
+
+  ConvertToMliTensor(input, &mli_in);
+  ConvertToMliTensor(filter, &mli_weights);
+  ConvertToMliTensor(bias, &mli_bias);
+  ConvertToMliTensor(output, &mli_out);
+
+  /* The input tensor can have more than 2 dimensions. for the compute this
+     doesn't make any difference because all the inputs or a batch entry will
+     be used anyway. because the MLI kernel doesn't recognize the multiple
+     dimensions, the tensor shape is casted to a {batchnum, inputsize} shape. */
+  mli_in.shape[0] = mli_out.shape[0];
+  mli_in.shape[1] = mli_weights.shape[1];
+  mli_in.shape[2] = 0;
+  mli_in.shape[3] = 0;
+  mli_in.rank = 2;
 
   // Tensors for data in fast (local) memory and config to copy data from
   // external to local memory
-  mli_tensor weights_local = *data.mli_weights;
-  mli_tensor bias_local = *data.mli_bias;
-  mli_tensor in_local = *data.mli_in;
-  mli_tensor out_local = *data.mli_out;
+  mli_tensor weights_local = mli_weights;
+  mli_tensor bias_local = mli_bias;
+  mli_tensor in_local = mli_in;
+  mli_tensor out_local = mli_out;
   mli_mov_cfg_t copy_config;
   mli_mov_cfg_for_copy(&copy_config);
   const int weight_out_dimension = 0;
   const int out_tensor_dimension = 1;
   const int input_size_dimension = 1;
-  int slice_size = data.mli_weights->shape[weight_out_dimension];
+  int slice_size = mli_weights.shape[weight_out_dimension];
 
   /* allocate the local buffers, and compute the slice size */
-  TF_LITE_ENSURE_STATUS(
-      ops::micro::get_arc_scratch_buffer_for_fully_connect_tensors(
-          context, &in_local, &weights_local, &bias_local, &out_local));
-  TF_LITE_ENSURE_STATUS(ops::micro::arc_scratch_buffer_calc_slice_size_weights(
+  TF_LITE_ENSURE_STATUS(get_arc_scratch_buffer_for_fully_connect_tensors(
+      context, &in_local, &weights_local, &bias_local, &out_local));
+  TF_LITE_ENSURE_STATUS(arc_scratch_buffer_calc_slice_size_weights(
       &weights_local, &bias_local, weight_out_dimension, &slice_size));
   int max_out_slice_size =
       out_local.capacity / mli_hlp_tensor_element_size(&out_local);
@@ -197,17 +167,15 @@ TfLiteStatus EvalMliQuantizedInt8(TfLiteContext* context, TfLiteNode* node,
   /* is_local indicates that the tensor is already in local memory,
      so in that case the original tensor can be used,
      and there is no need to copy it to the local tensor*/
-  const bool in_is_local = in_local.data == data.mli_in->data;
-  const bool out_is_local = out_local.data == data.mli_out->data;
-  const bool w_is_local = weights_local.data == data.mli_weights->data;
-  const bool b_is_local = bias_local.data == data.mli_bias->data;
+  const bool in_is_local = in_local.data == mli_in.data;
+  const bool out_is_local = out_local.data == mli_out.data;
+  const bool w_is_local = weights_local.data == mli_weights.data;
+  const bool b_is_local = bias_local.data == mli_bias.data;
 
-  ops::micro::TensorSlicer w_slice(data.mli_weights, weight_out_dimension,
-                                   slice_size);
-  ops::micro::TensorSlicer b_slice(data.mli_bias, weight_out_dimension,
-                                   slice_size);
-  ops::micro::TensorSlicer out_ch_slice(data.mli_out, out_tensor_dimension,
-                                        slice_size, 0, 0, 0, true);
+  TensorSlicer w_slice(&mli_weights, weight_out_dimension, slice_size);
+  TensorSlicer b_slice(&mli_bias, weight_out_dimension, slice_size);
+  TensorSlicer out_ch_slice(&mli_out, out_tensor_dimension, slice_size, 0, 0, 0,
+                            true);
 
   mli_tensor* w_ptr = w_is_local ? w_slice.Sub() : &weights_local;
   mli_tensor* b_ptr = b_is_local ? b_slice.Sub() : &bias_local;
@@ -220,15 +188,15 @@ TfLiteStatus EvalMliQuantizedInt8(TfLiteContext* context, TfLiteNode* node,
 
     // Slice the input over the batches (one at a time with the size of a
     // complete input)
-    ops::micro::TensorSlicer in_slice(data.mli_in, input_size_dimension,
-                                      data.mli_in->shape[input_size_dimension]);
+    TensorSlicer in_slice(&mli_in, input_size_dimension,
+                          mli_in.shape[input_size_dimension]);
 
-    /* output tensor is already sliced in the output size dimension.
+    /* output tensor is alreade sliced in the output size dimension.
     out_ch_slice.Sub() is the tensor for the amount of output size of this
-    iteration of the weight slice loop. This tensor needs to be further
+    itteration of the weight slice loop. This tensor needs to be further
     sliced over the batch */
-    ops::micro::TensorSlicer out_slice(out_ch_slice.Sub(), out_tensor_dimension,
-                                       slice_size);
+    TensorSlicer out_slice(out_ch_slice.Sub(), out_tensor_dimension,
+                           slice_size);
 
     /* setup the pointers to the local or remote tensor to make the code
      * inside the loop easier. */
@@ -255,30 +223,24 @@ TfLiteStatus EvalMliQuantizedInt8(TfLiteContext* context, TfLiteNode* node,
 }
 
 TfLiteStatus EvalQuantizedInt8(TfLiteContext* context, TfLiteNode* node,
-                               const OpData& data,
-                               const TfLiteEvalTensor* input,
-                               const TfLiteEvalTensor* filter,
-                               const TfLiteEvalTensor* bias,
-                               TfLiteEvalTensor* output) {
+                               const OpData& data, const TfLiteTensor* input,
+                               const TfLiteTensor* filter,
+                               const TfLiteTensor* bias, TfLiteTensor* output) {
 #if !defined(TF_LITE_STRIP_REFERENCE_IMPL)
   tflite::FullyConnectedParams op_params;
-  op_params.input_offset = -data.input_zero_point;
-  op_params.weights_offset = -data.filter_zero_point;
-  op_params.output_offset = data.output_zero_point;
+  op_params.input_offset = -input->params.zero_point;
+  op_params.weights_offset = -filter->params.zero_point;
+  op_params.output_offset = output->params.zero_point;
   op_params.output_multiplier = data.output_multiplier;
   op_params.output_shift = -data.output_shift;
   op_params.quantized_activation_min = data.output_activation_min;
   op_params.quantized_activation_max = data.output_activation_max;
 
   reference_integer_ops::FullyConnected(
-      op_params, tflite::micro::GetTensorShape(input),
-      tflite::micro::GetTensorData<int8_t>(input),
-      tflite::micro::GetTensorShape(filter),
-      tflite::micro::GetTensorData<int8_t>(filter),
-      tflite::micro::GetTensorShape(bias),
-      tflite::micro::GetTensorData<int32_t>(bias),
-      tflite::micro::GetTensorShape(output),
-      tflite::micro::GetTensorData<int8_t>(output));
+      op_params, GetTensorShape(input), GetTensorData<int8_t>(input),
+      GetTensorShape(filter), GetTensorData<int8_t>(filter),
+      GetTensorShape(bias), GetTensorData<int32_t>(bias),
+      GetTensorShape(output), GetTensorData<int8_t>(output));
   return kTfLiteOk;
 #else
   TF_LITE_KERNEL_LOG(context,
@@ -288,14 +250,13 @@ TfLiteStatus EvalQuantizedInt8(TfLiteContext* context, TfLiteNode* node,
 }
 
 TfLiteStatus EvalQuantized(TfLiteContext* context, TfLiteNode* node,
-                           const OpData& data, const TfLiteEvalTensor* input,
-                           const TfLiteEvalTensor* filter,
-                           const TfLiteEvalTensor* bias,
-                           TfLiteEvalTensor* output) {
+                           const OpData& data, const TfLiteTensor* input,
+                           const TfLiteTensor* filter, const TfLiteTensor* bias,
+                           TfLiteTensor* output) {
 #if !defined(TF_LITE_STRIP_REFERENCE_IMPL)
-  const int32_t input_offset = -data.input_zero_point;
-  const int32_t filter_offset = -data.filter_zero_point;
-  const int32_t output_offset = data.output_zero_point;
+  const int32_t input_offset = -input->params.zero_point;
+  const int32_t filter_offset = -filter->params.zero_point;
+  const int32_t output_offset = output->params.zero_point;
 
   tflite::FullyConnectedParams op_params;
   op_params.input_offset = input_offset;
@@ -307,16 +268,12 @@ TfLiteStatus EvalQuantized(TfLiteContext* context, TfLiteNode* node,
   op_params.quantized_activation_min = data.output_activation_min;
   op_params.quantized_activation_max = data.output_activation_max;
 
-#define TF_LITE_FULLY_CONNECTED(output_data_type)      \
-  reference_ops::FullyConnected(                       \
-      op_params, tflite::micro::GetTensorShape(input), \
-      tflite::micro::GetTensorData<uint8_t>(input),    \
-      tflite::micro::GetTensorShape(filter),           \
-      tflite::micro::GetTensorData<uint8_t>(filter),   \
-      tflite::micro::GetTensorShape(bias),             \
-      tflite::micro::GetTensorData<int32_t>(bias),     \
-      tflite::micro::GetTensorShape(output),           \
-      tflite::micro::GetTensorData<output_data_type>(output))
+#define TF_LITE_FULLY_CONNECTED(output_data_type)                      \
+  reference_ops::FullyConnected(                                       \
+      op_params, GetTensorShape(input), GetTensorData<uint8_t>(input), \
+      GetTensorShape(filter), GetTensorData<uint8_t>(filter),          \
+      GetTensorShape(bias), GetTensorData<int32_t>(bias),              \
+      GetTensorShape(output), GetTensorData<output_data_type>(output))
   switch (output->type) {
     case kTfLiteUInt8:
       TF_LITE_FULLY_CONNECTED(uint8_t);
@@ -341,9 +298,8 @@ TfLiteStatus EvalQuantized(TfLiteContext* context, TfLiteNode* node,
 
 TfLiteStatus EvalFloat(TfLiteContext* context, TfLiteNode* node,
                        TfLiteFusedActivation activation,
-                       const TfLiteEvalTensor* input,
-                       const TfLiteEvalTensor* filter,
-                       const TfLiteEvalTensor* bias, TfLiteEvalTensor* output) {
+                       const TfLiteTensor* input, const TfLiteTensor* filter,
+                       const TfLiteTensor* bias, TfLiteTensor* output) {
 #if !defined(TF_LITE_STRIP_REFERENCE_IMPL)
   float output_activation_min, output_activation_max;
   CalculateActivationRange(activation, &output_activation_min,
@@ -352,14 +308,10 @@ TfLiteStatus EvalFloat(TfLiteContext* context, TfLiteNode* node,
   op_params.float_activation_min = output_activation_min;
   op_params.float_activation_max = output_activation_max;
   tflite::reference_ops::FullyConnected(
-      op_params, tflite::micro::GetTensorShape(input),
-      tflite::micro::GetTensorData<float>(input),
-      tflite::micro::GetTensorShape(filter),
-      tflite::micro::GetTensorData<float>(filter),
-      tflite::micro::GetTensorShape(bias),
-      tflite::micro::GetTensorData<float>(bias),
-      tflite::micro::GetTensorShape(output),
-      tflite::micro::GetTensorData<float>(output));
+      op_params, GetTensorShape(input), GetTensorData<float>(input),
+      GetTensorShape(filter), GetTensorData<float>(filter),
+      GetTensorShape(bias), GetTensorData<float>(bias), GetTensorShape(output),
+      GetTensorData<float>(output));
   return kTfLiteOk;
 #else
   TF_LITE_KERNEL_LOG(context,
@@ -374,14 +326,10 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   const auto* params =
       static_cast<const TfLiteFullyConnectedParams*>(node->builtin_data);
 
-  TfLiteEvalTensor* output =
-      tflite::micro::GetEvalOutput(context, node, kOutputTensor);
-  const TfLiteEvalTensor* input =
-      tflite::micro::GetEvalInput(context, node, kInputTensor);
-  const TfLiteEvalTensor* filter =
-      tflite::micro::GetEvalInput(context, node, kWeightsTensor);
-  const TfLiteEvalTensor* bias =
-      tflite::micro::GetEvalInput(context, node, kBiasTensor);
+  const TfLiteTensor* input = GetInput(context, node, kInputTensor);
+  const TfLiteTensor* filter = GetInput(context, node, kWeightsTensor);
+  const TfLiteTensor* bias = GetOptionalInputTensor(context, node, kBiasTensor);
+  TfLiteTensor* output = GetOutput(context, node, kOutputTensor);
 
   TFLITE_DCHECK(node->user_data != nullptr);
   const OpData& data = *(static_cast<const OpData*>(node->user_data));
@@ -392,7 +340,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
       return EvalFloat(context, node, params->activation, input, filter, bias,
                        output);
     case kTfLiteInt8:
-      if (data.is_mli_applicable) {
+      if (IsMliApplicable(context, input, filter, bias, params)) {
         return EvalMliQuantizedInt8(context, node, params, data, input, filter,
                                     bias, output);
       } else {
@@ -411,11 +359,15 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 }
 
+}  // namespace fully_connected
+}  // namespace micro
+}  // namespace ops
+
 TfLiteRegistration Register_FULLY_CONNECTED() {
-  return {/*init=*/Init,
+  return {/*init=*/ops::micro::fully_connected::Init,
           /*free=*/nullptr,
-          /*prepare=*/Prepare,
-          /*invoke=*/Eval,
+          /*prepare=*/ops::micro::fully_connected::Prepare,
+          /*invoke=*/ops::micro::fully_connected::Eval,
           /*profiling_string=*/nullptr,
           /*builtin_code=*/0,
           /*custom_name=*/nullptr,

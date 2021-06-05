@@ -63,5 +63,5 @@ ZEPHYR_MD5 := "755622eb4812fde918a6382b65d50c3b"
 ETHOSU_URL := "https://git.mlplatform.org/ml/ethos-u/ethos-u-core-driver.git/snapshot/ethos-u-core-driver-2b201c340788ac582cec160b7217c2b5405b04f9.tar.gz"
 ETHOSU_MD5 := "0c148b90a1ee01de398892eb3a63e717"
 
-HIMAX_WE1_SDK_URL ="https://www.himax.com.tw/we-i/himax_we1_sdk_v04.zip"
+HIMAX_WE1_SDK_URL ="https://cdn.edgeimpulse.com/build-system/himax_we1_sdk_v04.zip"
 HIMAX_WE1_SDK_MD5 ="40b3ccb3c2e41210fe5c970d61e7e7d3"

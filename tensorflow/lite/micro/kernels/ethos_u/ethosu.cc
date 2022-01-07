@@ -1,4 +1,4 @@
-/* Copyright 2020 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2021 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,12 +13,33 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include <ethosu_driver.h>
-
-#include "flatbuffers/flexbuffers.h"
+#define FLATBUFFERS_LOCALE_INDEPENDENT 0
+#include "third_party/flatbuffers/include/flatbuffers/flexbuffers.h"
 #include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
 
+#if EI_CLASSIFIER_TFLITE_ETHOSU_POLYFILL || EI_ETHOS
+
+#if EI_CLASSIFIER_TFLITE_ETHOSU_POLYFILL
+// Modified by Edge Impulse
+// Add stub definitions so that EON Compiler can run
+
+int ethosu_invoke(struct ethosu_driver *drv,
+                  const void *custom_data_ptr,
+                  const int custom_data_size,
+                  const uint64_t *base_addr,
+                  const size_t *base_addr_size,
+                  const int num_base_addr)
+{ return 0; }
+
+// forward declare the struct
+struct ethosu_driver;
+
+struct ethosu_driver *ethosu_reserve_driver(void) { return nullptr; }
+void ethosu_release_driver(struct ethosu_driver *drv) {}
+#else
+#include <ethosu_driver.h>
+#endif
 namespace tflite {
 namespace {
 
@@ -120,8 +141,11 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   // the 8 first tensors
   num_tensors = std::min(num_tensors, 8);
 
-  result = ethosu_invoke_v2(cms_data, data->cms_data_size, base_addrs,
-                            base_addrs_size, num_tensors);
+  struct ethosu_driver* drv = ethosu_reserve_driver();
+  result = ethosu_invoke(drv, cms_data, data->cms_data_size, base_addrs,
+                         base_addrs_size, num_tensors);
+  ethosu_release_driver(drv);
+
   if (-1 == result) {
     return kTfLiteError;
   } else {
@@ -146,3 +170,20 @@ TfLiteRegistration* Register_ETHOSU() {
 const char* GetString_ETHOSU() { return "ethos-u"; }
 
 }  // namespace tflite
+
+#else
+
+//
+// This is a stub file for non-Ethos platforms
+//
+#include "edge-impulse-sdk/tensorflow/lite/c/common.h"
+
+namespace tflite {
+
+TfLiteRegistration* Register_ETHOSU() { return nullptr; }
+
+const char* GetString_ETHOSU() { return ""; }
+
+}  // namespace tflite
+
+#endif // Ethos flag

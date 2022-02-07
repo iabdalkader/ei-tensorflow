@@ -8,6 +8,10 @@ ifeq ($(TARGET_ARCH), cortex-m0)
   CORE=M0
   ARM_LDFLAGS := -Wl,--cpu=Cortex-M0
 
+else ifeq ($(TARGET_ARCH), cortex-m0plus)
+  CORE=M0plus
+  ARM_LDFLAGS := -Wl,--cpu=Cortex-M0plus
+
 else ifeq ($(TARGET_ARCH), cortex-m3)
   CORE=M3
   ARM_LDFLAGS := -Wl,--cpu=Cortex-M3

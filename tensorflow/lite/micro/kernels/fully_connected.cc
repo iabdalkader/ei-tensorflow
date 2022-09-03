@@ -82,6 +82,13 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   // Checks in Prepare ensure input, output and filter types are all the same.
   switch (input->type) {
     case kTfLiteFloat32: {
+      #if EI_TFLITE_DISABLE_FULLY_CONNECTED_IN_F32
+      context->ReportError(context,
+                            "Filter data type %s currently not supported.",
+                            TfLiteTypeGetName(filter->type));
+      return kTfLiteError;
+      #endif
+
       tflite::reference_ops::FullyConnected(
           FullyConnectedParamsFloat(params->activation),
           tflite::micro::GetTensorShape(input),
@@ -96,6 +103,13 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
     }
 
     case kTfLiteInt8: {
+      #if EI_TFLITE_DISABLE_FULLY_CONNECTED_IN_I8
+      context->ReportError(context,
+                            "Filter data type %s currently not supported.",
+                            TfLiteTypeGetName(filter->type));
+      return kTfLiteError;
+      #endif
+
       tflite::reference_integer_ops::FullyConnected(
           FullyConnectedParamsQuantized(data),
           tflite::micro::GetTensorShape(input),
@@ -110,6 +124,13 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
     }
 
     case kTfLiteUInt8: {
+      #if EI_TFLITE_DISABLE_FULLY_CONNECTED_IN_U8
+      context->ReportError(context,
+                            "Filter data type %s currently not supported.",
+                            TfLiteTypeGetName(filter->type));
+      return kTfLiteError;
+      #endif
+
       tflite::reference_ops::FullyConnected(
           FullyConnectedParamsQuantized(data),
           tflite::micro::GetTensorShape(input),

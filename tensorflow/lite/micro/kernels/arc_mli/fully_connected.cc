@@ -319,9 +319,23 @@ TfLiteStatus EvalQuantized(TfLiteContext* context, TfLiteNode* node,
       tflite::micro::GetTensorData<output_data_type>(output))
   switch (output->type) {
     case kTfLiteUInt8:
+      #if EI_TFLITE_DISABLE_FULLY_CONNECTED_OUT_U8
+      context->ReportError(context,
+                            "Type %s currently not supported.",
+                            TfLiteTypeGetName(filter->type));
+      return kTfLiteError;
+      #endif
+
       TF_LITE_FULLY_CONNECTED(uint8_t);
       break;
     case kTfLiteInt16:
+      #if EI_TFLITE_DISABLE_FULLY_CONNECTED_OUT_I16
+      context->ReportError(context,
+                            "Type %s currently not supported.",
+                            TfLiteTypeGetName(filter->type));
+      return kTfLiteError;
+      #endif
+
       TF_LITE_FULLY_CONNECTED(int16_t);
       break;
     default:
@@ -389,9 +403,23 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   // Checks in Prepare ensure input, output and filter types are all the same.
   switch (input->type) {
     case kTfLiteFloat32:
+      #if EI_TFLITE_DISABLE_FULLY_CONNECTED_IN_F32
+      context->ReportError(context,
+                            "Filter data type %s currently not supported.",
+                            TfLiteTypeGetName(filter->type));
+      return kTfLiteError;
+      #endif
+
       return EvalFloat(context, node, params->activation, input, filter, bias,
                        output);
     case kTfLiteInt8:
+      #if EI_TFLITE_DISABLE_FULLY_CONNECTED_IN_I8
+      context->ReportError(context,
+                            "Filter data type %s currently not supported.",
+                            TfLiteTypeGetName(filter->type));
+      return kTfLiteError;
+      #endif
+
       if (data.is_mli_applicable) {
         return EvalMliQuantizedInt8(context, node, params, data, input, filter,
                                     bias, output);
@@ -401,6 +429,13 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
       }
 
     case kTfLiteUInt8:
+      #if EI_TFLITE_DISABLE_FULLY_CONNECTED_IN_U8
+      context->ReportError(context,
+                            "Filter data type %s currently not supported.",
+                            TfLiteTypeGetName(filter->type));
+      return kTfLiteError;
+      #endif
+
       return EvalQuantized(context, node, data, input, filter, bias, output);
 
     default:

@@ -192,9 +192,8 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   switch (input->type) {
     case kTfLiteFloat32: {
       #if EI_TFLITE_DISABLE_FULLY_CONNECTED_IN_F32
-      context->ReportError(context,
-                            "Filter data type %s currently not supported.",
-                            TfLiteTypeGetName(filter->type));
+      TF_LITE_KERNEL_LOG(context, "Type %s (%d) not supported.",
+                      TfLiteTypeGetName(input->type), input->type);
       return kTfLiteError;
       #endif
 
@@ -212,9 +211,8 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
     }
     case kTfLiteInt8: {
       #if EI_TFLITE_DISABLE_FULLY_CONNECTED_IN_I8
-      context->ReportError(context,
-                            "Filter data type %s currently not supported.",
-                            TfLiteTypeGetName(filter->type));
+      TF_LITE_KERNEL_LOG(context, "Type %s (%d) not supported.",
+                      TfLiteTypeGetName(input->type), input->type);
       return kTfLiteError;
       #endif
 
@@ -223,9 +221,8 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
     }
     case kTfLiteUInt8: {
       #if EI_TFLITE_DISABLE_FULLY_CONNECTED_IN_U8
-      context->ReportError(context,
-                            "Filter data type %s currently not supported.",
-                            TfLiteTypeGetName(filter->type));
+      TF_LITE_KERNEL_LOG(context, "Type %s (%d) not supported.",
+                      TfLiteTypeGetName(input->type), input->type);
       return kTfLiteError;
       #endif
 

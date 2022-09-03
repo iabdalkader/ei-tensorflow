@@ -320,9 +320,8 @@ TfLiteStatus EvalQuantized(TfLiteContext* context, TfLiteNode* node,
   switch (output->type) {
     case kTfLiteUInt8:
       #if EI_TFLITE_DISABLE_FULLY_CONNECTED_OUT_U8
-      context->ReportError(context,
-                            "Type %s currently not supported.",
-                            TfLiteTypeGetName(filter->type));
+      TF_LITE_KERNEL_LOG(context, "Type %s (%d) not supported.",
+                      TfLiteTypeGetName(output->type), output->type);
       return kTfLiteError;
       #endif
 
@@ -330,9 +329,8 @@ TfLiteStatus EvalQuantized(TfLiteContext* context, TfLiteNode* node,
       break;
     case kTfLiteInt16:
       #if EI_TFLITE_DISABLE_FULLY_CONNECTED_OUT_I16
-      context->ReportError(context,
-                            "Type %s currently not supported.",
-                            TfLiteTypeGetName(filter->type));
+      TF_LITE_KERNEL_LOG(context, "Type %s (%d) not supported.",
+                      TfLiteTypeGetName(output->type), output->type);
       return kTfLiteError;
       #endif
 

@@ -345,10 +345,34 @@ TfLiteStatus AverageEval(TfLiteContext* context, TfLiteNode* node) {
   // Inputs and outputs share the same type, guaranteed by the converter.
   switch (input->type) {
     case kTfLiteFloat32:
+      #if EI_TFLITE_DISABLE_AVERAGE_POOL_2D_IN_F32
+      TF_LITE_KERNEL_LOG(context, "Type %s (%d) not supported.",
+                      TfLiteTypeGetName(input->type), input->type);
+      return kTfLiteError;
+      #endif
+
       AverageEvalFloat(context, node, params, data, input, output);
       break;
     case kTfLiteUInt8:
+      #if EI_TFLITE_DISABLE_AVERAGE_POOL_2D_IN_U8
+      TF_LITE_KERNEL_LOG(context, "Type %s (%d) not supported.",
+                      TfLiteTypeGetName(input->type), input->type);
+      return kTfLiteError;
+      #endif
+
+      if (data.is_mli_applicable) {
+        EvalMli(context, params, data, input, output, AveragePooling);
+      } else {
+        AverageEvalQuantized(context, node, params, data, input, output);
+      }
+      break;
     case kTfLiteInt8:
+      #if EI_TFLITE_DISABLE_AVERAGE_POOL_2D_IN_I8
+      TF_LITE_KERNEL_LOG(context, "Type %s (%d) not supported.",
+                      TfLiteTypeGetName(input->type), input->type);
+      return kTfLiteError;
+      #endif
+
       if (data.is_mli_applicable) {
         EvalMli(context, params, data, input, output, AveragePooling);
       } else {
@@ -376,10 +400,34 @@ TfLiteStatus MaxEval(TfLiteContext* context, TfLiteNode* node) {
 
   switch (input->type) {
     case kTfLiteFloat32:
+      #if EI_TFLITE_DISABLE_MAX_POOL_2D_IN_F32
+      TF_LITE_KERNEL_LOG(context, "Type %s (%d) not supported.",
+                      TfLiteTypeGetName(input->type), input->type);
+      return kTfLiteError;
+      #endif
+
       MaxEvalFloat(context, node, params, data, input, output);
       break;
     case kTfLiteUInt8:
+      #if EI_TFLITE_DISABLE_MAX_POOL_2D_IN_U8
+      TF_LITE_KERNEL_LOG(context, "Type %s (%d) not supported.",
+                      TfLiteTypeGetName(input->type), input->type);
+      return kTfLiteError;
+      #endif
+
+      if (data.is_mli_applicable) {
+        EvalMli(context, params, data, input, output, MaxPooling);
+      } else {
+        MaxEvalQuantized(context, node, params, data, input, output);
+      }
+      break;
     case kTfLiteInt8:
+      #if EI_TFLITE_DISABLE_MAX_POOL_2D_IN_I8
+      TF_LITE_KERNEL_LOG(context, "Type %s (%d) not supported.",
+                      TfLiteTypeGetName(input->type), input->type);
+      return kTfLiteError;
+      #endif
+
       if (data.is_mli_applicable) {
         EvalMli(context, params, data, input, output, MaxPooling);
       } else {

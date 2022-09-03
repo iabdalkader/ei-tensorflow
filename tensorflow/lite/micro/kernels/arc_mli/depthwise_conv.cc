@@ -549,9 +549,21 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 
   switch (input->type) {  // Already know in/out types are same.
     case kTfLiteFloat32:
+      #if EI_TFLITE_DISABLE_DEPTHWISE_CONV_2D_IN_F32
+      TF_LITE_KERNEL_LOG(context, "Type %s (%d) not supported.",
+                      TfLiteTypeGetName(input->type), input->type);
+      return kTfLiteError;
+      #endif
+
       EvalFloat(context, node, params, data, input, filter, bias, output);
       break;
     case kTfLiteInt8:
+      #if EI_TFLITE_DISABLE_DEPTHWISE_CONV_2D_IN_I8
+      TF_LITE_KERNEL_LOG(context, "Type %s (%d) not supported.",
+                      TfLiteTypeGetName(input->type), input->type);
+      return kTfLiteError;
+      #endif
+
       if (data.is_mli_applicable) {
         EvalMliQuantizedPerChannel(context, node, params, data, input, filter,
                                    bias, output);
@@ -561,6 +573,12 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
       }
       break;
     case kTfLiteUInt8:
+      #if EI_TFLITE_DISABLE_DEPTHWISE_CONV_2D_IN_U8
+      TF_LITE_KERNEL_LOG(context, "Type %s (%d) not supported.",
+                      TfLiteTypeGetName(input->type), input->type);
+      return kTfLiteError;
+      #endif
+
       EvalQuantized(context, node, params, data, input, filter, bias, output);
       break;
     default:

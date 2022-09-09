@@ -39,6 +39,7 @@ AllOpsResolver::AllOpsResolver() {
   AddElu();
   AddEqual();
   AddEthosU();
+  AddExp();
   AddFloor();
   AddFullyConnected();
   AddGreater();

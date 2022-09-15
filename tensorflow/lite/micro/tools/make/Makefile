@@ -331,6 +331,7 @@ tensorflow/lite/micro/kernels/cast.cc \
 tensorflow/lite/micro/kernels/ceil.cc \
 tensorflow/lite/micro/kernels/circular_buffer.cc \
 tensorflow/lite/micro/kernels/comparisons.cc \
+tensorflow/lite/micro/kernels/complex_abs.cc \
 tensorflow/lite/micro/kernels/concatenation.cc \
 tensorflow/lite/micro/kernels/conv.cc \
 tensorflow/lite/micro/kernels/conv_common.cc \
@@ -341,12 +342,12 @@ tensorflow/lite/micro/kernels/div.cc \
 tensorflow/lite/micro/kernels/elementwise.cc \
 tensorflow/lite/micro/kernels/elu.cc \
 tensorflow/lite/micro/kernels/ethosu.cc \
-tensorflow/lite/micro/kernels/exp.cc \
 tensorflow/lite/micro/kernels/expand_dims.cc \
 tensorflow/lite/micro/kernels/fill.cc \
 tensorflow/lite/micro/kernels/floor.cc \
 tensorflow/lite/micro/kernels/fully_connected.cc \
 tensorflow/lite/micro/kernels/fully_connected_common.cc \
+tensorflow/lite/micro/kernels/gather.cc \
 tensorflow/lite/micro/kernels/hard_swish.cc \
 tensorflow/lite/micro/kernels/kernel_runner.cc \
 tensorflow/lite/micro/kernels/kernel_util.cc \
@@ -365,11 +366,15 @@ tensorflow/lite/micro/kernels/pooling.cc \
 tensorflow/lite/micro/kernels/prelu.cc \
 tensorflow/lite/micro/kernels/quantize.cc \
 tensorflow/lite/micro/kernels/quantize_common.cc \
+tensorflow/lite/micro/kernels/real.cc \
 tensorflow/lite/micro/kernels/reduce.cc \
 tensorflow/lite/micro/kernels/reshape.cc \
 tensorflow/lite/micro/kernels/resize_nearest_neighbor.cc \
+tensorflow/lite/micro/kernels/rfft2d.cc \
 tensorflow/lite/micro/kernels/round.cc \
+tensorflow/lite/micro/kernels/select.cc \
 tensorflow/lite/micro/kernels/shape.cc \
+tensorflow/lite/micro/kernels/slice.cc \
 tensorflow/lite/micro/kernels/softmax.cc \
 tensorflow/lite/micro/kernels/softmax_common.cc \
 tensorflow/lite/micro/kernels/space_to_batch_nd.cc \

@@ -34,16 +34,28 @@ namespace tflite {
 TfLiteRegistration Register_ADD_N();
 TfLiteRegistration Register_BATCH_TO_SPACE_ND();
 TfLiteRegistration Register_CAST();
+TfLiteRegistration Register_COMPLEX_ABS();
 TfLiteRegistration Register_CONV_2D();
 TfLiteRegistration Register_DEPTHWISE_CONV_2D();
 TfLiteRegistration Register_DIV();
 TfLiteRegistration Register_ELU();
 TfLiteRegistration Register_EXPAND_DIMS();
 TfLiteRegistration Register_FILL();
+#ifndef TF_LITE_STATIC_MEMORY
+TfLiteRegistration Register_GATHER();
+#endif // TF_LITE_STATIC_MEMORY
+TfLiteRegistration Register_IMAG();
 TfLiteRegistration Register_L2_POOL_2D();
 TfLiteRegistration Register_LEAKY_RELU();
 TfLiteRegistration Register_QUANTIZE();
+TfLiteRegistration Register_REAL();
+TfLiteRegistration Register_RFFT2D();
+#ifndef TF_LITE_STATIC_MEMORY
+TfLiteRegistration Register_SELECT();
+TfLiteRegistration Register_SELECT_V2();
+#endif // TF_LITE_STATIC_MEMORY
 TfLiteRegistration Register_SHAPE();
+TfLiteRegistration Register_SLICE();
 TfLiteRegistration Register_SOFTMAX();
 TfLiteRegistration Register_SPACE_TO_BATCH_ND();
 TfLiteRegistration Register_SQUEEZE();
@@ -103,6 +115,7 @@ TfLiteRegistration Register_SQRT();
 TfLiteRegistration Register_SQUARE();
 TfLiteRegistration Register_STRIDED_SLICE();
 TfLiteRegistration Register_SUB();
+TfLiteRegistration Register_SUM();
 TfLiteRegistration Register_UNPACK();
 TfLiteRegistration Register_L2_NORMALIZATION();
 TfLiteRegistration Register_TANH();

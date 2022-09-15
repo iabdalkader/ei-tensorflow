@@ -176,7 +176,7 @@ const char* GetString_ETHOSU() { return "ethos-u"; }
 //
 // This is a stub file for non-Ethos platforms
 //
-#include "edge-impulse-sdk/tensorflow/lite/c/common.h"
+#include "tensorflow/lite/c/common.h"
 
 namespace tflite {
 

@@ -14,13 +14,13 @@ limitations under the License.
 ==============================================================================*/
 
 #define FLATBUFFERS_LOCALE_INDEPENDENT 0
-#include "edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/flexbuffers.h"
-#include "edge-impulse-sdk/tensorflow/lite/c/common.h"
-#include "edge-impulse-sdk/tensorflow/lite/micro/kernels/kernel_util.h"
+#include "flatbuffers/flexbuffers.h"
+#include "tensorflow/lite/c/common.h"
+#include "tensorflow/lite/micro/kernels/kernel_util.h"
 
 #if EI_CLASSIFIER_TFLITE_ETHOSU_POLYFILL || EI_ETHOS
 
-#if EI_CLASSIFIER_TFLITE_ETHOSU_POLYFILL 
+#if EI_CLASSIFIER_TFLITE_ETHOSU_POLYFILL
 // Modified by Edge Impulse
 // Add stub definitions so that EON Compiler can run
 
@@ -176,7 +176,7 @@ const char* GetString_ETHOSU() { return "ethos-u"; }
 //
 // This is a stub file for non-Ethos platforms
 //
-#include "edge-impulse-sdk/tensorflow/lite/c/common.h"
+#include "tensorflow/lite/c/common.h"
 
 namespace tflite {
 

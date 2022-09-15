@@ -13,15 +13,15 @@ limitations under the License.
 #include <numeric>
 
 #define FLATBUFFERS_LOCALE_INDEPENDENT 0
-#include "edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/flexbuffers.h"
-#include "edge-impulse-sdk/tensorflow/lite/c/builtin_op_data.h"
-#include "edge-impulse-sdk/tensorflow/lite/c/common.h"
-#include "edge-impulse-sdk/tensorflow/lite/kernels/internal/common.h"
-#include "edge-impulse-sdk/tensorflow/lite/kernels/internal/quantization_util.h"
-#include "edge-impulse-sdk/tensorflow/lite/kernels/internal/tensor_ctypes.h"
-#include "edge-impulse-sdk/tensorflow/lite/kernels/op_macros.h"
-#include "edge-impulse-sdk/tensorflow/lite/micro/micro_utils.h"
-#include "edge-impulse-sdk/tensorflow/lite/kernels/kernel_util.h"
+#include "third_party/flatbuffers/include/flatbuffers/flexbuffers.h"
+#include "tensorflow/lite/c/builtin_op_data.h"
+#include "tensorflow/lite/c/common.h"
+#include "tensorflow/lite/kernels/internal/common.h"
+#include "tensorflow/lite/kernels/internal/quantization_util.h"
+#include "tensorflow/lite/kernels/internal/tensor_ctypes.h"
+#include "tensorflow/lite/kernels/op_macros.h"
+#include "tensorflow/lite/micro/micro_utils.h"
+#include "tensorflow/lite/kernels/kernel_util.h"
 
 namespace tflite {
 

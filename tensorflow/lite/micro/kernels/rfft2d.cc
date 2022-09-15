@@ -27,7 +27,7 @@ limitations under the License.
 #include "tensorflow/lite/kernels/kernel_util.h"
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
 #include "tensorflow/lite/micro/kernels/micro_utils.h"
-#include "dsp/kissfft/kiss_fftr.h"
+#include "edge-impulse-sdk/dsp/kissfft/kiss_fftr.h"
 
 namespace tflite {
 namespace ops {

@@ -74,6 +74,7 @@ AllOpsResolver::AllOpsResolver() {
   AddQuantize();
   AddReal();
   AddReduceMax();
+  AddReduceMin();
   AddRelu();
   AddRelu6();
   AddReshape();
@@ -100,6 +101,7 @@ AllOpsResolver::AllOpsResolver() {
   AddSum();
   AddSvdf();
   AddTanh();
+  AddTranspose();
   AddTransposeConv();
   AddUnpack();
 }

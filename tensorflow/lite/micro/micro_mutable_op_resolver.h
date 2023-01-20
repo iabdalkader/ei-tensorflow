@@ -394,6 +394,11 @@ class MicroMutableOpResolver : public MicroOpResolver {
                       tflite::ops::micro::Register_REDUCE_MAX(), ParseReducer);
   }
 
+  TfLiteStatus AddReduceMin() {
+     return AddBuiltin(BuiltinOperator_REDUCE_MIN,
+                       tflite::ops::micro::Register_REDUCE_MIN(), ParseReducer);
+   }
+
   TfLiteStatus AddRelu() {
     return AddBuiltin(BuiltinOperator_RELU, tflite::ops::micro::Register_RELU(),
                       ParseRelu);
@@ -514,6 +519,11 @@ class MicroMutableOpResolver : public MicroOpResolver {
   TfLiteStatus AddTanh() {
     return AddBuiltin(BuiltinOperator_TANH, tflite::ops::micro::Register_TANH(),
                       ParseTanh);
+  }
+
+  TfLiteStatus AddTranspose() {
+    return AddBuiltin(BuiltinOperator_TRANSPOSE,
+                      tflite::Register_TRANSPOSE(), ParseTranspose);
   }
 
   TfLiteStatus AddTransposeConv() {

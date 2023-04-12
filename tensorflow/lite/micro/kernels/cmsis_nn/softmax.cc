@@ -31,12 +31,20 @@ namespace {
 void SoftmaxQuantized(const TfLiteEvalTensor* input, TfLiteEvalTensor* output,
                       const SoftmaxParams& op_data) {
   if (input->type == kTfLiteUInt8) {
+    #if EI_TFLITE_DISABLE_SOFTMAX_IN_U8
+    return;
+    #endif
+
     tflite::reference_ops::Softmax(
         op_data, tflite::micro::GetTensorShape(input),
         tflite::micro::GetTensorData<uint8_t>(input),
         tflite::micro::GetTensorShape(output),
         tflite::micro::GetTensorData<uint8_t>(output));
   } else if (input->type == kTfLiteInt8) {
+    #if EI_TFLITE_DISABLE_SOFTMAX_IN_I8
+    return;
+    #endif
+
     if (output->type == kTfLiteInt16) {
       #if EI_TFLITE_DISABLE_SOFTMAX_OUT_I16
       return;
@@ -48,6 +56,10 @@ void SoftmaxQuantized(const TfLiteEvalTensor* input, TfLiteEvalTensor* output,
           tflite::micro::GetTensorShape(output),
           tflite::micro::GetTensorData<int16_t>(output));
     } else {
+      #if EI_TFLITE_DISABLE_SOFTMAX_OUT_I8
+      return;
+      #endif
+
       const auto input_shape = tflite::micro::GetTensorShape(input);
       const auto output_shape = tflite::micro::GetTensorShape(output);
       const int trailing_dim = input_shape.DimensionsCount() - 1;
@@ -62,6 +74,10 @@ void SoftmaxQuantized(const TfLiteEvalTensor* input, TfLiteEvalTensor* output,
                      tflite::micro::GetTensorData<int8_t>(output));
     }
   } else {
+    #if EI_TFLITE_DISABLE_SOFTMAX_IN_I16
+    return;
+    #endif
+
     tflite::reference_ops::SoftmaxInt16(
         op_data, tflite::micro::GetTensorShape(input),
         tflite::micro::GetTensorData<int16_t>(input),

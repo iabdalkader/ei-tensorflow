@@ -77,8 +77,8 @@ void PortableAsymmetricQuantizeFloats(const float* values, const int size,
   const double qmin_double = kMinScale;
   const double qmax_double = kMaxScale;
   const auto minmax = std::minmax_element(values, values + size);
-  const double rmin = std::fmin(0, *minmax.first);
-  const double rmax = std::fmax(0, *minmax.second);
+  const double rmin = fmin(0, *minmax.first);
+  const double rmax = fmax(0, *minmax.second);
   if (rmin == rmax) {
     memset(quantized_values, 0, size * sizeof(int8_t));
     *scaling_factor = 1;

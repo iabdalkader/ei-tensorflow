@@ -1,11 +1,8 @@
 /* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -155,7 +152,7 @@ void TfLiteFloatArrayFree(TfLiteFloatArray* a);
 #ifndef TF_LITE_STRIP_ERROR_STRINGS
 #define TF_LITE_KERNEL_LOG(context, ...)            \
   do {                                              \
-    (context)->ReportError((context), __VA_ARGS__); \
+    (context)->ReportError((context), __FILE__ " " __VA_ARGS__); \
   } while (false)
 
 #define TF_LITE_MAYBE_KERNEL_LOG(context, ...)        \
@@ -164,7 +161,7 @@ void TfLiteFloatArrayFree(TfLiteFloatArray* a);
       (context)->ReportError((context), __VA_ARGS__); \
     }                                                 \
   } while (false)
-#else  // TF_LITE_STRIP_ERROR_STRINGS
+#else  // TF_LITE_STRIP_ERROR_STRINGSTF_LITE_KERNEL_LOG
 #define TF_LITE_KERNEL_LOG(context, ...)
 #define TF_LITE_MAYBE_KERNEL_LOG(context, ...)
 #endif  // TF_LITE_STRIP_ERROR_STRINGS
@@ -174,7 +171,7 @@ void TfLiteFloatArrayFree(TfLiteFloatArray* a);
 #define TF_LITE_ENSURE_MSG(context, value, msg)        \
   do {                                                 \
     if (!(value)) {                                    \
-      TF_LITE_KERNEL_LOG((context), __FILE__ " " msg); \
+      TF_LITE_KERNEL_LOG((context), msg); \
       return kTfLiteError;                             \
     }                                                  \
   } while (0)

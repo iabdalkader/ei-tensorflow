@@ -62,6 +62,7 @@ AllOpsResolver::AllOpsResolver() {
   AddLogicalNot();
   AddLogicalOr();
   AddLogistic();
+  AddLogSoftmax();
   AddMaxPool2D();
   AddMaximum();
   AddMean();
